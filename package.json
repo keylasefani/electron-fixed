@@ -5,30 +5,26 @@
   "type": "module",
   "description": "Aplikasi Antrian",
   "author": "Keyla",
-
   "scripts": {
     "dev": "cross-env PORT=3000 next dev",
-
     "build": "next build",
     "start": "next start -p 3000",
-
     "ele": "electron .",
-    "ele:build": "electron-builder"
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win"
   },
-
   "dependencies": {
+    "cross-env": "^7.0.3",
     "next": "14.2.3",
+    "node-thermal-printer": "^4.5.0",
     "react": "18.2.0",
-    "react-dom": "18.2.0",
-    "cross-env": "^7.0.3"
+    "react-dom": "18.2.0"
   },
-
   "devDependencies": {
+    "concurrently": "^8.2.2",
     "electron": "^28.0.0",
-    "electron-builder": "^24.13.3",
-    "concurrently": "^8.2.2"
+    "electron-builder": "^24.13.3"
   },
-
   "build": {
     "appId": "com.antrian.app",
     "productName": "Aplikasi Antrian",
@@ -36,12 +32,25 @@
       "output": "dist"
     },
     "files": [
-      "**/*"
+      "out/**/*",
+      "main.js",
+      "preload.cjs",
+      "package.json",
+      "node_modules/**/*"
     ],
     "asar": false,
     "win": {
-      "target": "nsis",
+      "target": [
+        "nsis",
+        "portable"
+      ],
       "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     }
   }
 }

@@ -65,13 +65,21 @@ export default function DisplayPage(){
   }, [])
 
   return (
-    <div className="display-box" style={{ paddingTop: '45px' }}>
+    <div style={{ 
+      textAlign: 'center', 
+      padding: '40px', 
+      borderRadius: '18px', 
+      background: 'white', 
+      maxWidth: '760px', 
+      margin: '40px auto',
+      paddingTop: '45px' 
+    }}>
       <BackButton />
       <audio src="/sounds/dingdong.mp3" ref={bellRef}></audio>
 
-      <h2 className="h1" style={{ color: '#5b21b6' }}>Nomor Antrian</h2>
-      <div className="big-num">{current}</div>
-      <p className="muted" style={{ marginTop: 12 }}>Silakan menuju loket</p>
+      <h2 style={{ fontSize: '32px', margin: '0 0 6px 0', color: '#5b21b6' }}>Nomor Antrian</h2>
+      <div style={{ fontSize: '56px', fontWeight: 800, color: '#2563eb' }}>{current}</div>
+      <p style={{ color: '#6b7280', marginTop: 12 }}>Silakan menuju loket</p>
     </div>
   )
 }

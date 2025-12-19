@@ -7,8 +7,6 @@ export default function PetugasPage(){
 
   const resetAntrian = () => {
     localStorage.removeItem('queue_last_A')
-
-
     localStorage.removeItem('queue_current')
     localStorage.removeItem('queue_history')
     localStorage.removeItem('queue_called')
@@ -18,11 +16,21 @@ export default function PetugasPage(){
   }
 
   return (
-    <div className="panel" style={{ paddingTop: '45px' }}>
+    <div style={{ 
+      maxWidth: '760px', 
+      margin: '40px auto', 
+      background: 'rgba(255,255,255,0.85)', 
+      backdropFilter: 'blur(6px)', 
+      padding: '28px', 
+      borderRadius: '20px', 
+      boxShadow: '0 12px 30px rgba(2,6,23,0.06)', 
+      border: '1px solid rgba(255,255,255,0.6)',
+      paddingTop: '45px' 
+    }}>
       <BackButton />
 
-      <h2 className="h1" style={{ color: '#064e3b' }}>Panel Petugas</h2>
-      <p className="muted">Kelola dan panggil nomor antrian</p>
+      <h2 style={{ fontSize: '32px', margin: '0 0 6px 0', color: '#064e3b' }}>Panel Petugas</h2>
+      <p style={{ color: '#6b7280' }}>Kelola dan panggil nomor antrian</p>
 
       <button
         onClick={resetAntrian}

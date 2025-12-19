@@ -1,9 +1,24 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer } = require("electron");
 
-contextBridge.exposeInMainWorld('electronAPI', {
-  printTicket: (htmlContent) => ipcRenderer.invoke('print-ticket', htmlContent),
-  printTicketToPrinter: (htmlContent, printerName) =>
-    ipcRenderer.invoke('print-ticket-to-printer', { htmlContent, printerName }),
-  getPrinters: () => ipcRenderer.invoke('get-printers'),
-  resetQueue: () => ipcRenderer.invoke('reset-antrian')
+contextBridge.exposeInMainWorld("electronAPI", {
+  // 🖨 Print HTML ke printer biasa (silent)
+  printToPrinter: (htmlContent, printerName) =>
+    ipcRenderer.invoke("print-ticket-to-printer", {
+      htmlContent,
+      printerName
+    }),
+
+  // 🧾 Print ke thermal printer (ESC/POS)
+  printThermal: ({ queueCode, service, printerName }) =>
+    ipcRenderer.invoke("print-thermal", {
+      queueCode,
+      service,
+      printerName
+    }),
+
+  // 🖨 Ambil list printer
+  getPrinters: () => ipcRenderer.invoke("get-printers"),
+
+  // 🔄 Reset antrian
+  resetQueue: () => ipcRenderer.invoke("reset-antrian")
 });
