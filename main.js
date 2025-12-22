@@ -98,62 +98,114 @@ ipcMain.handle("print-thermal", async (event, { queueCode, service, printerName 
 
     console.log('🖨️ Printing to:', selectedPrinter);
 
-    const printer = new ThermalPrinter({
-      type: PrinterTypes.EPSON,
-      interface: `printer:${selectedPrinter}`,
-      width: 48,
-      characterSet: 'PC437_USA',
-      removeSpecialCharacters: false,
-      lineCharacter: "-",
-      options: {
-        timeout: 5000
-      }
-    });
-
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('id-ID');
-    const timeStr = now.toLocaleTimeString('id-ID');
-
-    // Header (tanpa newLine berlebihan)
-    printer.alignCenter();
-    printer.bold(true);
-    printer.setTextSize(1, 1);
-    printer.println("SISTEM ANTRIAN");
-    printer.bold(false);
-    printer.setTextSize(0, 0);
-    printer.println("================================");
-
-    // Nomor Antrian (BESAR) - kurangi spacing
-    printer.bold(true);
-    printer.setTextSize(2, 2);
-    printer.println(queueCode);
-    printer.setTextSize(0, 0);
-    printer.bold(false);
-
-    // Info Layanan - spacing lebih rapat
-    printer.alignLeft();
-    printer.println(`Layanan : ${service}`);
-    printer.println(`Tanggal : ${dateStr}`);
-    printer.println(`Waktu   : ${timeStr}`);
-    printer.println("================================");
-
-    // Footer - kurangi newLine
-    printer.alignCenter();
-    printer.println("Terima kasih");
-    printer.println("Mohon menunggu panggilan");
-    printer.newLine();
-    printer.newLine();
-
-    // Cut paper
-    printer.cut();
-
-    await printer.execute();
-    console.log("✅ Thermal print berhasil:", queueCode);
+    // Deteksi tipe driver berdasarkan nama printer
+    let printerType = PrinterTypes.EPSON; // Default
+    const printerLower = selectedPrinter.toLowerCase();
     
-    return { success: true };
+    if (printerLower.includes('star')) {
+      printerType = PrinterTypes.STAR;
+    } else if (printerLower.includes('tanca')) {
+      printerType = PrinterTypes.TANCA;
+    } else if (printerLower.includes('daruma')) {
+      printerType = PrinterTypes.DARUMA;
+    }
+
+    console.log('🔧 Using printer type:', printerType);
+
+    // Coba beberapa konfigurasi driver
+    const configs = [
+      {
+        type: printerType,
+        interface: `printer:${selectedPrinter}`,
+        width: 48,
+        characterSet: 'PC437_USA',
+      },
+      {
+        type: PrinterTypes.EPSON,
+        interface: `printer:${selectedPrinter}`,
+        width: 48,
+        characterSet: 'PC437_USA',
+      },
+      {
+        type: PrinterTypes.STAR,
+        interface: `printer:${selectedPrinter}`,
+        width: 48,
+        characterSet: 'PC437_USA',
+      }
+    ];
+
+    let lastError = null;
+    
+    // Coba setiap konfigurasi sampai ada yang berhasil
+    for (const config of configs) {
+      try {
+        const printer = new ThermalPrinter({
+          ...config,
+          removeSpecialCharacters: false,
+          lineCharacter: "-",
+          options: {
+            timeout: 5000
+          }
+        });
+
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('id-ID');
+        const timeStr = now.toLocaleTimeString('id-ID');
+
+        // Header
+        printer.alignCenter();
+        printer.bold(true);
+        printer.setTextSize(1, 1);
+        printer.println("SISTEM ANTRIAN");
+        printer.bold(false);
+        printer.setTextSize(0, 0);
+        printer.println("================================");
+
+        // Nomor Antrian (BESAR)
+        printer.bold(true);
+        printer.setTextSize(2, 2);
+        printer.println(queueCode);
+        printer.setTextSize(0, 0);
+        printer.bold(false);
+
+        // Info Layanan
+        printer.alignLeft();
+        printer.println(`Layanan : ${service}`);
+        printer.println(`Tanggal : ${dateStr}`);
+        printer.println(`Waktu   : ${timeStr}`);
+        printer.println("================================");
+
+        // Footer
+        printer.alignCenter();
+        printer.println("Terima kasih");
+        printer.println("Mohon menunggu panggilan");
+        printer.newLine();
+        printer.newLine();
+
+        // Cut paper
+        printer.cut();
+
+        await printer.execute();
+        console.log(`✅ Thermal print berhasil dengan driver ${config.type}:`, queueCode);
+        
+        return { success: true, driver: config.type };
+      } catch (err) {
+        console.log(`⚠️ Gagal dengan driver ${config.type}:`, err.message);
+        lastError = err;
+        continue;
+      }
+    }
+
+    // Kalau semua gagal, throw error terakhir
+    throw lastError || new Error('Semua driver gagal');
+    
   } catch (error) {
     console.error("❌ Thermal print error:", error);
-    return { success: false, error: error.message };
+    return { 
+      success: false, 
+      error: error.message,
+      detail: 'Pastikan:\n1. Printer sudah menyala\n2. Driver printer terinstall\n3. Printer bisa print test page dari Windows'
+    };
   }
 });
 

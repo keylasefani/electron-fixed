@@ -105,9 +105,11 @@ export default function QueueCard({ service }){
       })
       
       if (result.success) {
-        alert(`✅ Tiket ${next.code} berhasil dicetak ke printer:\n${selectedPrinter}`)
+        const driverInfo = result.driver ? ` (driver: ${result.driver})` : ''
+        alert(`✅ Tiket ${next.code} berhasil dicetak!\n\nPrinter: ${selectedPrinter}${driverInfo}`)
       } else {
-        alert(`❌ Gagal print ke ${selectedPrinter}:\n${result.error}`)
+        const errorDetail = result.detail ? `\n\n${result.detail}` : ''
+        alert(`❌ Gagal print ke ${selectedPrinter}:\n${result.error}${errorDetail}`)
       }
     } catch (error) {
       alert(`❌ Error saat print: ${error.message}`)
