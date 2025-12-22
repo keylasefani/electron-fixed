@@ -26,14 +26,27 @@ export default function QueueCard({ service }){
     setMounted(true)
     loadData()
 
-    // Load printer list
+    // Load printer list - hanya printer yang terdeteksi
     if (typeof window !== 'undefined' && window.electronAPI) {
       window.electronAPI.getPrinters().then(printerList => {
-        setPrinters(printerList)
-        const defaultPrinter = printerList.find(p => p.isDefault)
+        // Filter hanya printer yang statusnya available/ready
+        const availablePrinters = printerList.filter(p => 
+          p.status === 0 || // Status 0 = ready
+          p.status === undefined || // Tidak ada info status, anggap available
+          !p.status // Fallback
+        )
+        setPrinters(availablePrinters)
+        
+        // Pilih default printer kalau ada
+        const defaultPrinter = availablePrinters.find(p => p.isDefault)
         if (defaultPrinter) {
           setSelectedPrinter(defaultPrinter.name)
+        } else if (availablePrinters.length > 0) {
+          // Kalau tidak ada default, pilih yang pertama
+          setSelectedPrinter(availablePrinters[0].name)
         }
+      }).catch(err => {
+        console.error('Error loading printers:', err)
       })
     }
 
@@ -81,19 +94,23 @@ export default function QueueCard({ service }){
     const next = pending[0]
 
     if (!selectedPrinter) {
-      return alert('Pilih printer thermal terlebih dahulu')
+      return alert('⚠️ Pilih printer thermal terlebih dahulu!\n\nPastikan printer sudah terhubung dan terdeteksi di dropdown.')
     }
 
-    const result = await window.electronAPI.printThermal({ 
-      queueCode: next.code, 
-      service, 
-      printerName: selectedPrinter 
-    })
-    
-    if (result.success) {
-      alert(`Tiket ${next.code} berhasil dicetak ke printer thermal!`)
-    } else {
-      alert(`Gagal print: ${result.error}`)
+    try {
+      const result = await window.electronAPI.printThermal({ 
+        queueCode: next.code, 
+        service, 
+        printerName: selectedPrinter 
+      })
+      
+      if (result.success) {
+        alert(`✅ Tiket ${next.code} berhasil dicetak ke printer:\n${selectedPrinter}`)
+      } else {
+        alert(`❌ Gagal print ke ${selectedPrinter}:\n${result.error}`)
+      }
+    } catch (error) {
+      alert(`❌ Error saat print: ${error.message}`)
     }
   }
 
@@ -112,10 +129,10 @@ export default function QueueCard({ service }){
           Menunggu: {pendingCount}
         </div>
         
-        {printers.length > 0 && (
+        {printers.length > 0 ? (
           <div style={{ marginTop: 12 }}>
             <label style={{ fontSize: 13, color: '#64748b', display: 'block', marginBottom: 4 }}>
-              Printer Thermal:
+              Printer Thermal ({printers.length} terdeteksi):
             </label>
             <select 
               value={selectedPrinter} 
@@ -128,13 +145,24 @@ export default function QueueCard({ service }){
                 width: '100%'
               }}
             >
-              <option value="">Pilih Printer</option>
+              <option value="">-- Pilih Printer --</option>
               {printers.map(p => (
                 <option key={p.name} value={p.name}>
-                  {p.name} {p.isDefault ? '(Default)' : ''}
+                  {p.name} {p.isDefault ? '⭐ (Default)' : ''}
                 </option>
               ))}
             </select>
+          </div>
+        ) : (
+          <div style={{ 
+            marginTop: 12, 
+            padding: '8px 12px', 
+            background: '#fef3c7', 
+            borderRadius: 6,
+            fontSize: 13,
+            color: '#92400e'
+          }}>
+            ⚠️ Tidak ada printer terdeteksi. Pastikan printer sudah terhubung.
           </div>
         )}
       </div>

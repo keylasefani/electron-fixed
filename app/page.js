@@ -83,7 +83,7 @@ export default function Home() {
     border: 'none',
     borderRadius: '8px',
     cursor: 'pointer',
-    fontWeight: 600,
+    fontWeight: 600, 
     fontSize: '14px',
     transition: 'all 0.2s'
   })

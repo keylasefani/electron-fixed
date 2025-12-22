@@ -73,20 +73,48 @@ ipcMain.handle("get-printers", async () => {
 // Print ke thermal printer dengan ESC/POS
 ipcMain.handle("print-thermal", async (event, { queueCode, service, printerName }) => {
   try {
+    // Auto-detect printer jika tidak ada yang dipilih
+    let selectedPrinter = printerName;
+    
+    if (!selectedPrinter) {
+      const win = BrowserWindow.getAllWindows()[0];
+      if (win) {
+        const printers = await win.webContents.getPrintersAsync();
+        // Cari thermal printer atau gunakan default
+        const thermalPrinter = printers.find(p => 
+          p.name.toLowerCase().includes('pos') || 
+          p.name.toLowerCase().includes('thermal') ||
+          p.name.toLowerCase().includes('xprinter') ||
+          p.name.toLowerCase().includes('receipt') ||
+          p.isDefault
+        );
+        selectedPrinter = thermalPrinter ? thermalPrinter.name : (printers[0]?.name || '');
+      }
+    }
+
+    if (!selectedPrinter) {
+      throw new Error('Tidak ada printer yang tersedia');
+    }
+
+    console.log('🖨️ Printing to:', selectedPrinter);
+
     const printer = new ThermalPrinter({
       type: PrinterTypes.EPSON,
-      interface: `printer:${printerName}`,
+      interface: `printer:${selectedPrinter}`,
       width: 48,
       characterSet: 'PC437_USA',
       removeSpecialCharacters: false,
-      lineCharacter: "-"
+      lineCharacter: "-",
+      options: {
+        timeout: 5000
+      }
     });
 
     const now = new Date();
     const dateStr = now.toLocaleDateString('id-ID');
     const timeStr = now.toLocaleTimeString('id-ID');
 
-    // Header
+    // Header (tanpa newLine berlebihan)
     printer.alignCenter();
     printer.bold(true);
     printer.setTextSize(1, 1);
@@ -94,29 +122,25 @@ ipcMain.handle("print-thermal", async (event, { queueCode, service, printerName 
     printer.bold(false);
     printer.setTextSize(0, 0);
     printer.println("================================");
-    printer.newLine();
 
-    // Nomor Antrian (BESAR)
+    // Nomor Antrian (BESAR) - kurangi spacing
     printer.bold(true);
     printer.setTextSize(2, 2);
     printer.println(queueCode);
     printer.setTextSize(0, 0);
     printer.bold(false);
-    printer.newLine();
 
-    // Info Layanan
+    // Info Layanan - spacing lebih rapat
     printer.alignLeft();
-    printer.println(`Layanan      : ${service}`);
-    printer.println(`Tanggal      : ${dateStr}`);
-    printer.println(`Waktu        : ${timeStr}`);
+    printer.println(`Layanan : ${service}`);
+    printer.println(`Tanggal : ${dateStr}`);
+    printer.println(`Waktu   : ${timeStr}`);
     printer.println("================================");
-    printer.newLine();
 
-    // Footer
+    // Footer - kurangi newLine
     printer.alignCenter();
     printer.println("Terima kasih");
     printer.println("Mohon menunggu panggilan");
-    printer.newLine();
     printer.newLine();
     printer.newLine();
 

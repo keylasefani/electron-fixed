@@ -9,7 +9,7 @@ export default function QueueButton({ label, service }) {
     setMounted(true)
   }, [])
 
-  const takeNumber = () => {
+  const takeNumber = async () => {
     if (processing || !mounted) return
 
     setProcessing(true)
@@ -25,6 +25,28 @@ export default function QueueButton({ label, service }) {
       hist.push({ code, service, ts: Date.now() })
       localStorage.setItem('queue_history', JSON.stringify(hist))
       window.dispatchEvent(new Event('storage'))
+
+      // 🖨️ Print ke thermal printer (auto-detect)
+      if (window.electronAPI) {
+        try {
+          // Printer akan di-auto detect di main process
+          const result = await window.electronAPI.printThermal({
+            queueCode: code,
+            service: `Layanan ${service}`,
+            printerName: '' // Kosongkan untuk auto-detect
+          })
+          
+          if (result.success) {
+            console.log('✅ Print berhasil!')
+          } else {
+            console.error('❌ Print gagal:', result.error)
+            alert('⚠️ Gagal print: ' + result.error)
+          }
+        } catch (printErr) {
+          console.error('Print error:', printErr)
+          alert('⚠️ Error print: ' + printErr.message)
+        }
+      }
 
       alert(`✅ Nomor antrian Anda:\n\n${code}\n\nLayanan ${service}`)
     } catch (err) {
