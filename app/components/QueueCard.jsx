@@ -84,7 +84,11 @@ export default function QueueCard({ service }){
       return alert('Pilih printer thermal terlebih dahulu')
     }
 
-    const result = await window.electronAPI.printThermal(next.code, service, selectedPrinter)
+    const result = await window.electronAPI.printThermal({ 
+      queueCode: next.code, 
+      service, 
+      printerName: selectedPrinter 
+    })
     
     if (result.success) {
       alert(`Tiket ${next.code} berhasil dicetak ke printer thermal!`)
